@@ -4,7 +4,7 @@ metadata:
   name: backend
   namespace: remindercal
 spec:
-  replicas: 1   # scheduler jobs use DB locks, so >1 is safe, but 1 is enough for most setups
+  replicas: 1
   selector:
     matchLabels: { app: backend }
   template:
@@ -15,22 +15,30 @@ spec:
         prometheus.io/port: "8000"
         prometheus.io/path: /metrics
     spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:16-alpine
+          command: ["sh", "-c", "until pg_isready -h postgres -p 5432; do echo 'Waiting for Postgres...'; sleep 2; done"]
       containers:
         - name: backend
-          image: remindercal-backend:latest   # build + import: see README (K3s)
+          image: remindercal-backend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
           envFrom:
             - configMapRef: { name: remindercal-config }
             - secretRef: { name: remindercal-secrets }
+          startupProbe:
+            httpGet: { path: /health, port: 8000 }
+            failureThreshold: 30
+            periodSeconds: 5
           readinessProbe:
             httpGet: { path: /health, port: 8000 }
-            initialDelaySeconds: 10
+            initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet: { path: /health, port: 8000 }
-            initialDelaySeconds: 30
+            initialDelaySeconds: 15
             periodSeconds: 20
             failureThreshold: 3
           resources:

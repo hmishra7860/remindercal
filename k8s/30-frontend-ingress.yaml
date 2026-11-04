@@ -13,12 +13,14 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: remindercal-frontend:latest   # built from nginx/Dockerfile
+          image: remindercal-frontend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
           readinessProbe:
             httpGet: { path: /, port: 80 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
           resources:
             requests: { cpu: 20m, memory: 32Mi }
             limits: { memory: 128Mi }
@@ -34,16 +36,14 @@ spec:
     - port: 80
       targetPort: 80
 ---
-# The frontend image's nginx.conf proxies /api/ to "backend:8000", which resolves
-# to the backend Service in this namespace.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: remindercal
   namespace: remindercal
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    # cert-manager (optional): cert-manager.io/cluster-issuer: letsencrypt
+    # Allows both HTTP (:80) and HTTPS (:443) on K3s Traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
 spec:
   rules:
     - host: remindercal.example.com
@@ -56,6 +56,3 @@ spec:
                 name: frontend
                 port:
                   number: 80
-  # tls:
-  #   - hosts: [remindercal.example.com]
-  #     secretName: remindercal-tls

@@ -1,9 +1,34 @@
-# Lightweight monitoring stack for K3s: Prometheus, Alertmanager, Grafana, node-exporter, cAdvisor.
 apiVersion: v1
 kind: Namespace
 metadata:
   name: monitoring
 ---
+# ---------------- Persistent Storage (K3s local-path) ----------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-data
+  namespace: monitoring
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-data
+  namespace: monitoring
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi
+---
+# ---------------- Prometheus Config & Rules ----------------
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -26,11 +51,15 @@ data:
         static_configs:
           - targets: ["backend.remindercal:8000"]
       - job_name: node
-        static_configs:
-          - targets: ["node-exporter.monitoring:9100"]
+        dns_sd_configs:
+          - names: ["tasks.node-exporter.monitoring.svc.cluster.local"]
+            type: A
+            port: 9100
       - job_name: cadvisor
-        static_configs:
-          - targets: ["cadvisor.monitoring:8080"]
+        dns_sd_configs:
+          - names: ["tasks.cadvisor.monitoring.svc.cluster.local"]
+            type: A
+            port: 8080
   alert.rules.yml: |
     groups:
       - name: remindercal
@@ -75,10 +104,11 @@ data:
     receivers:
       - name: default
 ---
+# ---------------- Grafana Provisioning & Dashboard ----------------
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-datasource
+  name: grafana-provisioning
   namespace: monitoring
 data:
   prometheus.yml: |
@@ -89,20 +119,71 @@ data:
         access: proxy
         url: http://prometheus:9090
         isDefault: true
+  dashboards.yml: |
+    apiVersion: 1
+    providers:
+      - name: ReminderCal
+        type: file
+        options:
+          path: /var/lib/grafana/dashboards
+  remindercal.json: |
+    {
+      "title": "ReminderCal Overview",
+      "uid": "remindercal-overview",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "30s",
+      "time": { "from": "now-6h", "to": "now" },
+      "panels": [
+        {
+          "id": 1, "type": "timeseries", "title": "API request rate (req/s)",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "targets": [{ "expr": "sum(rate(http_requests_total{job=\"backend\"}[5m])) by (status)", "legendFormat": "{{status}}" }]
+        },
+        {
+          "id": 2, "type": "timeseries", "title": "API latency p95 (s)",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_highr_seconds_bucket{job=\"backend\"}[5m])))", "legendFormat": "p95" }]
+        },
+        {
+          "id": 3, "type": "timeseries", "title": "Host CPU %",
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+          "targets": [{ "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", "legendFormat": "cpu" }]
+        },
+        {
+          "id": 4, "type": "timeseries", "title": "Host memory %",
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+          "targets": [{ "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100", "legendFormat": "memory" }]
+        },
+        {
+          "id": 5, "type": "timeseries", "title": "Container memory (MB)",
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+          "targets": [{ "expr": "sum by (id) (container_memory_working_set_bytes{id=~\"/kubepods.*\"}) / 1024 / 1024", "legendFormat": "{{id}}" }]
+        }
+      ]
+    }
 ---
+# ---------------- Deployments & Services ----------------
 apiVersion: apps/v1
 kind: Deployment
 metadata: { name: prometheus, namespace: monitoring }
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector: { matchLabels: { app: prometheus } }
   template:
     metadata: { labels: { app: prometheus } }
     spec:
+      securityContext:
+        fsGroup: 65534
       containers:
         - name: prometheus
           image: prom/prometheus:v2.55.1
-          args: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=15d"]
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--storage.tsdb.retention.time=15d"
           ports: [{ containerPort: 9090 }]
           volumeMounts:
             - { name: config, mountPath: /etc/prometheus }
@@ -111,14 +192,14 @@ spec:
         - name: config
           configMap: { name: prometheus-config }
         - name: data
-          emptyDir: {}
+          persistentVolumeClaim: { claimName: prometheus-data }
 ---
 apiVersion: v1
 kind: Service
 metadata: { name: prometheus, namespace: monitoring }
 spec:
   selector: { app: prometheus }
-  ports: [{ port: 9090 }]
+  ports: [{ port: 9090, targetPort: 9090 }]
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -144,37 +225,47 @@ kind: Service
 metadata: { name: alertmanager, namespace: monitoring }
 spec:
   selector: { app: alertmanager }
-  ports: [{ port: 9093 }]
+  ports: [{ port: 9093, targetPort: 9093 }]
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata: { name: grafana, namespace: monitoring }
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector: { matchLabels: { app: grafana } }
   template:
     metadata: { labels: { app: grafana } }
     spec:
+      securityContext:
+        fsGroup: 472
       containers:
         - name: grafana
           image: grafana/grafana:11.3.0
           ports: [{ containerPort: 3000 }]
           env:
             - name: GF_SECURITY_ADMIN_PASSWORD
-              value: change-me
+              value: change-me # Overridden if you inject a secret
           volumeMounts:
-            - { name: ds, mountPath: /etc/grafana/provisioning/datasources }
+            - { name: grafana-storage, mountPath: /var/lib/grafana }
+            - { name: prov, mountPath: /etc/grafana/provisioning/datasources/prometheus.yml, subPath: prometheus.yml }
+            - { name: prov, mountPath: /etc/grafana/provisioning/dashboards/dashboards.yml, subPath: dashboards.yml }
+            - { name: prov, mountPath: /var/lib/grafana/dashboards/remindercal.json, subPath: remindercal.json }
       volumes:
-        - name: ds
-          configMap: { name: grafana-datasource }
+        - name: grafana-storage
+          persistentVolumeClaim: { claimName: grafana-data }
+        - name: prov
+          configMap: { name: grafana-provisioning }
 ---
 apiVersion: v1
 kind: Service
 metadata: { name: grafana, namespace: monitoring }
 spec:
   selector: { app: grafana }
-  ports: [{ port: 3000 }]
+  ports: [{ port: 3000, targetPort: 3000 }]
 ---
+# ---------------- DaemonSets (Node Exporter & K3s cAdvisor) ----------------
 apiVersion: apps/v1
 kind: DaemonSet
 metadata: { name: node-exporter, namespace: monitoring }
@@ -199,8 +290,9 @@ apiVersion: v1
 kind: Service
 metadata: { name: node-exporter, namespace: monitoring }
 spec:
+  clusterIP: None
   selector: { app: node-exporter }
-  ports: [{ port: 9100 }]
+  ports: [{ port: 9100, targetPort: 9100 }]
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -213,20 +305,28 @@ spec:
       containers:
         - name: cadvisor
           image: gcr.io/cadvisor/cadvisor:v0.49.1
+          args:
+            - "--housekeeping_interval=10s"
+            - "--docker_only=false"
           ports: [{ containerPort: 8080 }]
           securityContext: { privileged: true }
           volumeMounts:
             - { name: rootfs, mountPath: /rootfs, readOnly: true }
             - { name: var-run, mountPath: /var/run, readOnly: true }
             - { name: sys, mountPath: /sys, readOnly: true }
+            - { name: k3s-containerd, mountPath: /run/k3s/containerd, readOnly: true }
+            - { name: k3s-data, mountPath: /var/lib/rancher/k3s, readOnly: true }
       volumes:
         - { name: rootfs, hostPath: { path: / } }
         - { name: var-run, hostPath: { path: /var/run } }
         - { name: sys, hostPath: { path: /sys } }
+        - { name: k3s-containerd, hostPath: { path: /run/k3s/containerd } }
+        - { name: k3s-data, hostPath: { path: /var/lib/rancher/k3s } }
 ---
 apiVersion: v1
 kind: Service
 metadata: { name: cadvisor, namespace: monitoring }
 spec:
+  clusterIP: None
   selector: { app: cadvisor }
-  ports: [{ port: 8080 }]
+  ports: [{ port: 8080, targetPort: 8080 }]

@@ -4,7 +4,9 @@
 // 3. remindercal-env       (Secret file)            -> Production .env file for K8s secrets
 
 pipeline {
-    agent { label 'k3s' }
+    agent {
+        label 'ubuntu'
+    }
 
     parameters {
         string(name: 'REGISTRY', defaultValue: 'docker.io/YOUR_USER', description: 'Registry path (e.g. docker.io/username)')
@@ -79,6 +81,9 @@ pipeline {
         }
 
         stage('Deploy to K3s') {
+            agent {
+                label 'Linux'
+            }
             steps {
                 withCredentials([
                     file(credentialsId: 'k3s-kubeconfig', variable: 'KUBECONFIG'),
@@ -119,6 +124,9 @@ pipeline {
                             kubectl -n "$K8S_NAMESPACE" logs deployment/backend --tail=50 || true
                         '''
                     }
+                }
+                Success {
+                    echo "Deployment successful! Access your app at: http://<your-k3s-node-ip>/"
                 }
             }
         }
