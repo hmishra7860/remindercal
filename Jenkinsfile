@@ -82,7 +82,7 @@ pipeline {
 
         stage('Deploy to K3s') {
             agent {
-                label 'Linux'
+                label 'linux'
             }
             steps {
                 withCredentials([
