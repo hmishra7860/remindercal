@@ -67,7 +67,7 @@ pipeline {
 
         stage('Push Docker Images') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'registry-credentials', usernameVariable: 'REG_USER', passwordVariable: 'REG_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'docker-registry-creds', usernameVariable: 'REG_USER', passwordVariable: 'REG_PASS')]) {
                     sh '''
                         echo "$REG_PASS" | docker login -u "$REG_USER" --password-stdin
                         docker push "$BACKEND_IMAGE"
@@ -125,7 +125,7 @@ pipeline {
                         '''
                     }
                 }
-                Success {
+                success {
                     echo "Deployment successful! Access your app at: http://<your-k3s-node-ip>/"
                 }
             }

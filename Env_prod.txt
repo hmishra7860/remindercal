@@ -1,8 +1,0 @@
-POSTGRES_USER=remindercal
-POSTGRES_PASSWORD=your_secure_password
-POSTGRES_DB=remindercal
-DATABASE_URL=postgresql+asyncpg://remindercal:your_secure_password@postgres:5432/remindercal
-SECRET_KEY=your_long_random_secret_key
-VAPID_PUBLIC_KEY=your_vapid_public_key
-VAPID_PRIVATE_KEY=your_vapid_private_key
-INBOUND_WEBHOOK_SECRET=
