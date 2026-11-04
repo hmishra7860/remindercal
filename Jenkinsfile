@@ -9,7 +9,7 @@ pipeline {
     }
 
     parameters {
-        string(name: 'REGISTRY', defaultValue: 'docker.io/hmishra7860', description: 'Registry path (must be lowercase, e.g. docker.io/username)')
+        string(name: 'REGISTRY', defaultValue: 'docker.io/varutik332', description: 'Registry path (must be lowercase, e.g. docker.io/username)')
         booleanParam(name: 'DEPLOY_MONITORING', defaultValue: true, description: 'Deploy Prometheus & Grafana stack')
     }
 
@@ -23,8 +23,9 @@ pipeline {
     environment {
         K8S_NAMESPACE  = 'remindercal'
         IMAGE_TAG      = "${env.BUILD_NUMBER}-${env.GIT_COMMIT.take(7)}"
-        BACKEND_IMAGE  = "${params.REGISTRY}/remindercal-backend:${IMAGE_TAG}"
-        FRONTEND_IMAGE = "${params.REGISTRY}/remindercal-frontend:${IMAGE_TAG}"
+        REGISTRY_CLEAN = "${params.REGISTRY.toLowerCase()}"
+        BACKEND_IMAGE  = "${REGISTRY_CLEAN}/remindercal-backend:${IMAGE_TAG}"
+        FRONTEND_IMAGE = "${REGISTRY_CLEAN}/remindercal-frontend:${IMAGE_TAG}"
     }
 
     stages {
