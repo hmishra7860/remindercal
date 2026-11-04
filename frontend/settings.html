@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ReminderCal - Settings</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="shell" data-page="settings" data-title="Settings">
+    <div class="tabs" id="tabs">
+      <button class="on" data-tab="profile">Profile</button>
+      <button data-tab="smtp">Email (SMTP)</button>
+      <button data-tab="notify">Notifications</button>
+      <button data-tab="integrations">Integrations</button>
+      <button data-tab="logs">Delivery logs</button>
+    </div>
+
+    <!-- Profile -->
+    <section class="card" data-panel="profile" style="max-width:640px">
+      <h3 style="margin-bottom:14px">Your profile</h3>
+      <form id="profileForm">
+        <div class="field"><label>Full name</label><input type="text" name="full_name" required></div>
+        <div class="field"><label>Email</label><input type="email" id="pEmail" disabled></div>
+        <div class="field"><label>Timezone</label><select name="timezone" id="pTz"></select></div>
+        <div class="field"><label>Preferred delivery hour (local time)</label>
+          <select name="reminder_timing" id="pTiming"></select>
+          <div class="hint">Birthday wishes and the daily digest arrive at this hour in the recipient's local time.</div></div>
+        <button class="btn" type="submit">Save profile</button>
+      </form>
+    </section>
+
+    <!-- SMTP -->
+    <section class="card hidden" data-panel="smtp" style="max-width:640px">
+      <h3 style="margin-bottom:4px">Bring your own SMTP</h3>
+      <p class="muted small" style="margin-top:0">Emails are sent from your own address. For Gmail use <code>smtp.gmail.com</code>, port 587 and an <strong>App Password</strong>.</p>
+      <form id="smtpForm">
+        <div class="form-grid">
+          <div class="field"><label>SMTP host</label><input type="text" name="smtp_host" required placeholder="smtp.gmail.com"></div>
+          <div class="field"><label>Port</label><input type="number" name="smtp_port" required value="587" min="1" max="65535"></div>
+          <div class="field"><label>Username</label><input type="text" name="smtp_user" required autocomplete="off"></div>
+          <div class="field"><label>App password</label><input type="password" name="smtp_pass" autocomplete="new-password" placeholder="Leave blank to keep current"></div>
+        </div>
+        <div class="field"><label>From email</label><input type="email" name="from_email" placeholder="Defaults to your login email"></div>
+        <div class="hint" style="margin-bottom:14px">Port 465 uses implicit TLS; 587 uses STARTTLS. Your password is stored encrypted.</div>
+        <div class="row"><button class="btn" type="submit">Save SMTP settings</button><button class="btn secondary" type="button" id="smtpTest">Send test email</button>
+          <span id="smtpState" class="pill"></span></div>
+      </form>
+    </section>
+
+    <!-- Notifications -->
+    <section class="card hidden" data-panel="notify" style="max-width:640px">
+      <h3 style="margin-bottom:6px">Notification preferences</h3>
+      <div class="switch-row"><div><div>Email reminders</div><div class="d">Send reminder emails via your SMTP server</div></div><input type="checkbox" class="toggle" data-pref="enable_email_reminders"></div>
+      <div class="switch-row"><div><div>Birthday wishes</div><div class="d">Send a birthday email to people you track (when they have an email)</div></div><input type="checkbox" class="toggle" data-pref="enable_birthday_emails"></div>
+      <div class="switch-row"><div><div>Daily digest</div><div class="d">A morning summary of today's reminders and upcoming birthdays</div></div><input type="checkbox" class="toggle" data-pref="enable_daily_digest"></div>
+
+      <h3 style="margin:22px 0 8px">Delivery method</h3>
+      <form id="deliveryForm">
+        <div class="field"><label>Send my reminders via</label>
+          <select name="delivery_method" id="dMethod"><option value="email">Email</option><option value="slack">Slack</option><option value="teams">Microsoft Teams</option></select></div>
+        <div class="field hidden" id="webhookBox"><label>Webhook URL</label><input type="url" name="webhook_url" placeholder="https://hooks.slack.com/services/..."><div class="hint">Incoming webhook for your Slack channel or Teams workflow. Must be https.</div></div>
+        <button class="btn" type="submit">Save delivery method</button>
+      </form>
+
+      <h3 style="margin:22px 0 8px">Browser notifications</h3>
+      <p class="muted small" style="margin-top:0">Get a banner on your desktop when a reminder triggers, even if the tab is closed.</p>
+      <button class="btn secondary" id="pushBtn">Enable browser notifications</button>
+    </section>
+
+    <!-- Integrations -->
+    <section class="card hidden" data-panel="integrations" style="max-width:720px">
+      <h3 style="margin-bottom:6px">Calendar feed (.ics)</h3>
+      <p class="muted small" style="margin-top:0">Subscribe in Google Calendar (Other calendars → From URL), Outlook or Apple Calendar. Keep this URL secret.</p>
+      <div class="copybox"><input type="text" id="feedUrl" readonly><button class="btn secondary" data-copy="feedUrl">Copy</button><button class="btn danger" id="regenFeed">Regenerate</button></div>
+
+      <h3 style="margin:26px 0 6px">Forward-to-create</h3>
+      <p class="muted small" style="margin-top:0">Forward a Zoom/Teams/Google invite to this address and ReminderCal creates a reminder 15 minutes before it starts.</p>
+      <div class="copybox"><input type="text" id="inboundAddr" readonly><button class="btn secondary" data-copy="inboundAddr">Copy</button></div>
+    </section>
+
+    <!-- Logs -->
+    <section class="card hidden" data-panel="logs">
+      <div class="row spread" style="margin-bottom:12px">
+        <h3>Delivery logs</h3>
+        <div class="row"><select id="logStatus" style="width:140px"><option value="">All</option><option value="sent">Sent</option><option value="failed">Failed</option></select>
+          <button class="btn secondary sm" id="logRefresh">Refresh</button></div>
+      </div>
+      <p class="muted small" style="margin-top:0">"Sent" means the message was handed off to your SMTP server (or webhook) successfully.</p>
+      <div class="table-wrap"><table><thead><tr><th>Time</th><th>Type</th><th>About</th><th>To</th><th>Status</th><th>Details</th></tr></thead><tbody id="logRows"></tbody></table></div>
+    </section>
+  </div>
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/settings.js"></script>
+</body>
+</html>

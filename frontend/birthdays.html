@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ReminderCal - Birthdays</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="shell" data-page="birthdays" data-title="Birthdays">
+    <div class="row spread" style="margin-bottom:16px">
+      <input type="text" id="search" placeholder="Search by name or interest..." style="width:260px">
+      <button class="btn" id="addBirthday">+ Add birthday</button>
+    </div>
+    <div class="b-grid" id="grid"></div>
+  </div>
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/forms.js"></script>
+  <script src="/js/birthdays.js"></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+{
+  "title": "ReminderCal Overview",
+  "uid": "remindercal-overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1, "type": "timeseries", "title": "API request rate (req/s)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "" },
+      "targets": [{ "expr": "sum(rate(http_requests_total{job=\"backend\"}[5m])) by (status)", "legendFormat": "{{status}}" }]
+    },
+    {
+      "id": 2, "type": "timeseries", "title": "API latency p95 (s)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "" },
+      "targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_highr_seconds_bucket{job=\"backend\"}[5m])))", "legendFormat": "p95" }]
+    },
+    {
+      "id": 3, "type": "timeseries", "title": "Host CPU %",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "" },
+      "targets": [{ "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", "legendFormat": "cpu" }]
+    },
+    {
+      "id": 4, "type": "timeseries", "title": "Host memory %",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "" },
+      "targets": [{ "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100", "legendFormat": "memory" }]
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Container memory (MB)",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "" },
+      "targets": [{ "expr": "sum by (name) (container_memory_usage_bytes{name!=\"\"}) / 1024 / 1024", "legendFormat": "{{name}}" }]
+    }
+  ]
+}

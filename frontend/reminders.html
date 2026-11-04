@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ReminderCal - Reminders</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="shell" data-page="reminders" data-title="Reminders">
+    <div class="row spread" style="margin-bottom:16px">
+      <div class="row">
+        <input type="text" id="search" placeholder="Search reminders..." style="width:220px">
+        <select id="catFilter" style="width:150px"><option value="">All categories</option><option>Work</option><option>Personal</option><option>Finance</option><option>Health</option></select>
+        <select id="statusFilter" style="width:150px"><option value="">All statuses</option><option value="pending">Pending</option><option value="sent">Sent</option><option value="done">Done</option></select>
+      </div>
+      <button class="btn" id="addReminder">+ New reminder</button>
+    </div>
+    <div class="card table-wrap"><table>
+      <thead><tr><th>Reminder</th><th>When</th><th>Repeats</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+  </div>
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/forms.js"></script>
+  <script src="/js/reminders.js"></script>
+</body>
+</html>

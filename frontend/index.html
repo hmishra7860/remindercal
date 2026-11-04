@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ReminderCal - Sign in</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="logo">🔔 ReminderCal</div>
+      <p class="muted" style="margin:0 0 20px">Reminders and birthdays, pushed to you from your own email address.</p>
+      <div class="tabs"><button class="on" data-tab="login">Sign in</button><button data-tab="register">Create account</button></div>
+
+      <form id="loginForm">
+        <div class="field"><label>Email</label><input type="email" name="email" required autocomplete="email"></div>
+        <div class="field"><label>Password</label><input type="password" name="password" required autocomplete="current-password"></div>
+        <button class="btn" style="width:100%" type="submit">Sign in</button>
+      </form>
+
+      <form id="registerForm" class="hidden">
+        <div class="field"><label>Full name</label><input type="text" name="full_name" required maxlength="120"></div>
+        <div class="field"><label>Email</label><input type="email" name="email" required autocomplete="email"></div>
+        <div class="field"><label>Password (min 8 characters)</label><input type="password" name="password" required minlength="8" autocomplete="new-password"></div>
+        <div class="field"><label>Timezone</label><select name="timezone" id="tzSelect"></select></div>
+        <button class="btn" style="width:100%" type="submit">Create account</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    if (Auth.token) location.href = '/dashboard.html';
+
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    $('#tzSelect').innerHTML = tzOptions(tz);
+
+    $$('[data-tab]').forEach(b => b.onclick = () => {
+      $$('[data-tab]').forEach(x => x.classList.toggle('on', x === b));
+      $('#loginForm').classList.toggle('hidden', b.dataset.tab !== 'login');
+      $('#registerForm').classList.toggle('hidden', b.dataset.tab !== 'register');
+    });
+
+    async function submit(path, form) {
+      const body = Object.fromEntries(new FormData(form));
+      try {
+        const res = await api(path, { method: 'POST', body, auth: false });
+        Auth.set(res.access_token);
+        location.href = '/dashboard.html';
+      } catch (err) { toast(err.message, 'error'); }
+    }
+    $('#loginForm').onsubmit = e => { e.preventDefault(); submit('/auth/login', e.target); };
+    $('#registerForm').onsubmit = e => { e.preventDefault(); submit('/auth/register', e.target); };
+  </script>
+</body>
+</html>

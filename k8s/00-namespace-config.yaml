@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: remindercal
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: remindercal-config
+  namespace: remindercal
+data:
+  PUBLIC_BASE_URL: "https://remindercal.example.com"
+  CORS_ORIGINS: "https://remindercal.example.com"
+  SNOOZE_MINUTES: "60"
+  SCHEDULER_ENABLED: "true"
+  ALLOW_PRIVATE_TARGETS: "false"
+  INBOUND_DOMAIN: "remindercal.example.com"
+  VAPID_SUBJECT: "mailto:admin@example.com"
+---
+# Replace every value before applying (or create this Secret with kubectl / sealed-secrets).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: remindercal-secrets
+  namespace: remindercal
+type: Opaque
+stringData:
+  POSTGRES_USER: remindercal
+  POSTGRES_PASSWORD: change-me
+  POSTGRES_DB: remindercal
+  DATABASE_URL: postgresql+asyncpg://remindercal:change-me@postgres:5432/remindercal
+  SECRET_KEY: change-me-to-a-long-random-string
+  VAPID_PUBLIC_KEY: ""
+  VAPID_PRIVATE_KEY: ""
+  INBOUND_WEBHOOK_SECRET: ""

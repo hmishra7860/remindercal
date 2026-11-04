@@ -1,0 +1,47 @@
+groups:
+  - name: remindercal
+    rules:
+      - alert: BackendDown
+        expr: up{job="backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ReminderCal backend is down"
+          description: "The FastAPI backend has been unreachable for more than 1 minute."
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "Host CPU has been above 80% for 5 minutes."
+
+      - alert: HighMemoryUsage
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Host memory has been above 80% for 5 minutes."
+
+      - alert: HighDiskUsage
+        expr: (1 - node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs"}) * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk almost full on {{ $labels.instance }} ({{ $labels.mountpoint }})"
+          description: "Storage usage is above 90%."
+
+      - alert: SlowAPIResponse
+        expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_highr_seconds_bucket{job="backend"}[5m]))) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow API responses"
+          description: "95th percentile response time has exceeded 2 seconds for 5 minutes."

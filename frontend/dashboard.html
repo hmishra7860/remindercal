@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ReminderCal - Dashboard</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="shell" data-page="dashboard" data-title="Dashboard">
+    <div class="grid stats">
+      <div class="card stat"><div class="n" id="sTotal">-</div><div class="l">Total reminders</div></div>
+      <div class="card stat"><div class="n" id="sToday">-</div><div class="l">Today</div></div>
+      <div class="card stat"><div class="n" id="sUpcoming">-</div><div class="l">Next 7 days</div></div>
+      <div class="card stat"><div class="n" id="sBdays">-</div><div class="l">Birthdays in 30 days</div></div>
+    </div>
+    <div class="row" style="margin-bottom:14px">
+      <button class="btn" id="addReminder">+ Reminder</button>
+      <button class="btn secondary" id="addBirthday">+ Birthday</button>
+    </div>
+    <div class="grid two-col">
+      <div class="card" id="calendar"></div>
+      <div class="card"><h3 style="margin-bottom:8px">Upcoming</h3><div id="upcoming"></div></div>
+    </div>
+  </div>
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/calendar.js"></script>
+  <script src="/js/forms.js"></script>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>
