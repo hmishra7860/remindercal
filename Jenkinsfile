@@ -1,5 +1,5 @@
 // Required Jenkins Credentials (Manage Jenkins -> Credentials -> Global):
-// 1. registry-credentials  (Username with password) -> Docker Hub / Registry login
+// 1. docker-registry-creds  (Username with password) -> Docker Hub / Registry login
 // 2. k3s-kubeconfig        (Secret file)            -> K3s cluster kubeconfig
 // 3. remindercal-env       (Secret file)            -> Production .env file for K8s secrets
 
@@ -9,7 +9,7 @@ pipeline {
     }
 
     parameters {
-        string(name: 'REGISTRY', defaultValue: 'docker.io/YOUR_USER', description: 'Registry path (e.g. docker.io/username)')
+        string(name: 'REGISTRY', defaultValue: 'docker.io/hmishra7860', description: 'Registry path (must be lowercase, e.g. docker.io/username)')
         booleanParam(name: 'DEPLOY_MONITORING', defaultValue: true, description: 'Deploy Prometheus & Grafana stack')
     }
 
