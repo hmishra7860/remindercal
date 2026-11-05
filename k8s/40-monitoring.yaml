@@ -314,16 +314,16 @@ spec:
             - { name: rootfs, mountPath: /rootfs, readOnly: true }
             - { name: var-run, mountPath: /var/run, readOnly: false }
             - { name: sys, mountPath: /sys, readOnly: true }
-            - { name: var-lib-docker, mountPath: /var/lib/docker, readOnly: true }
-            - { name: k3s-containerd, mountPath: /run/k3s/containerd, readOnly: true }
+            - { name: kubelet, mountPath: /var/lib/kubelet, readOnly: true }
             - { name: containerd, mountPath: /run/k3s/containerd, readOnly: true }
+            - { name: disk, mountPath: /dev/disk, readOnly: true }
       volumes:
         - { name: rootfs, hostPath: { path: / } }
         - { name: var-run, hostPath: { path: /var/run } }
-        - { name: sys, hostPath: { path: /sys } }
-        - { name: var-lib-docker, hostPath: { path: /var/lib/docker } }     
-        - { name: k3s-containerd, hostPath: { path: /run/k3s/containerd } }
-        - { name: containerd, hostPath: { path: /run/containerd } }
+        - { name: sys, hostPath: { path: /sys } }     
+        - { name: kubelet, hostPath: { path: /var/lib/kubelet } }
+        - { name: containerd, hostPath: { path: /run/k3s/containerd } }
+        - { name: disk, hostPath: { path: /dev/disk } }
 ---
 apiVersion: v1
 kind: Service
