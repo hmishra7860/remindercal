@@ -315,7 +315,7 @@ spec:
           securityContext: { privileged: true }
           volumeMounts:
             - { name: rootfs, mountPath: /rootfs, readOnly: true }
-            - { name: var-run, mountPath: /var/run, readOnly: true }
+            - { name: var-run, mountPath: /var/run, readOnly: false }
             - { name: sys, mountPath: /sys, readOnly: true }
             - { name: k3s-containerd, mountPath: /run/k3s/containerd, readOnly: true }
             - { name: k3s-data, mountPath: /var/lib/rancher/k3s, readOnly: true }
