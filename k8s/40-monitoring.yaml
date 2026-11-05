@@ -51,15 +51,12 @@ data:
         static_configs:
           - targets: ["backend.remindercal:8000"]
       - job_name: node
-        dns_sd_configs:
-          - names: ["tasks.node-exporter.monitoring.svc.cluster.local"]
-            type: A
-            port: 9100
+        static_configs:
+          - targets: ["node-exporter.monitoring.svc.cluster.local:9100"]
       - job_name: cadvisor
-        dns_sd_configs:
-          - names: ["tasks.cadvisor.monitoring.svc.cluster.local"]
-            type: A
-            port: 8080
+        static_configs:
+          - targets: ["cadvisor.monitoring.svc.cluster.local:8080"]
+            
   alert.rules.yml: |
     groups:
       - name: remindercal
@@ -317,14 +314,16 @@ spec:
             - { name: rootfs, mountPath: /rootfs, readOnly: true }
             - { name: var-run, mountPath: /var/run, readOnly: false }
             - { name: sys, mountPath: /sys, readOnly: true }
+            - { name: var-lib-docker, mountPath: /var/lib/docker, readOnly: true }
             - { name: k3s-containerd, mountPath: /run/k3s/containerd, readOnly: true }
-            - { name: k3s-data, mountPath: /var/lib/rancher/k3s, readOnly: true }
+            - { name: containerd, mountPath: /run/k3s/containerd, readOnly: true }
       volumes:
         - { name: rootfs, hostPath: { path: / } }
         - { name: var-run, hostPath: { path: /var/run } }
         - { name: sys, hostPath: { path: /sys } }
+        - { name: var-lib-docker, hostPath: { path: /var/lib/docker } }     
         - { name: k3s-containerd, hostPath: { path: /run/k3s/containerd } }
-        - { name: k3s-data, hostPath: { path: /var/lib/rancher/k3s } }
+        - { name: containerd, hostPath: { path: /run/containerd } }
 ---
 apiVersion: v1
 kind: Service
