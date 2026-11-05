@@ -49,10 +49,7 @@ metadata:
   name: postgres
   namespace: remindercal
 spec:
-  type: NodePort
+  clusterIP: None
   selector: { app: postgres }
   ports:
     - port: 5432
-      targetPort: 5432
-      nodePort: 30082
-      protocol: TCP
