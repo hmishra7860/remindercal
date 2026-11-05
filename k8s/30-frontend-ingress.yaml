@@ -31,10 +31,13 @@ metadata:
   name: frontend
   namespace: remindercal
 spec:
+  type: NodePort
   selector: { app: frontend }
   ports:
     - port: 80
       targetPort: 80
+      nodePort: 30081
+      protocol: TCP
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
