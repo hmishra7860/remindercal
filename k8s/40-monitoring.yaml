@@ -295,7 +295,7 @@ metadata: { name: node-exporter, namespace: monitoring }
 spec:
   type: NodePort
   selector: { app: node-exporter }
-  ports: [{ port: 9100, targetPort: 9100, nodePort: 30084, protocol: TCP }]
+  ports: [{ port: 9100, targetPort: 9100, nodePort: 30087, protocol: TCP }]
 ---
 apiVersion: apps/v1
 kind: DaemonSet
